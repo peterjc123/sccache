@@ -1,3 +1,57 @@
+## FAQ
+
+### 1. My CUDA build is stuck and then fails with "failed to fill whole buffer"
+
+Try setting max concurrent `make` build jobs to `$(nproc) - 1`.
+
+(See https://github.com/mozilla/sccache/issues/248)
+
+### 2. How do I build sccache that won't segfault with ASAN?
+
+Do the following steps:
+
+```
+sudo apt update
+sudo apt install musl-tools
+export DEPLOY=1
+export TARGET=x86_64-unknown-linux-musl
+export OPENSSL_DIR=$HOME/openssl-musl
+bash ./scripts/travis-musl-openssl.sh
+cargo build --release --target $TARGET --features=all
+
+Then, the built binary is at ./target/x86_64-unknown-linux-musl/release/sccache
+```
+
+Then, to check ASAN cleanness:
+
+```
+# Install clang
+export CLANG_VERSION=5.0
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends clang-"$CLANG_VERSION"
+sudo apt-get install -y --no-install-recommends llvm-"$CLANG_VERSION"
+
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-"$CLANG_VERSION" 50
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-"$CLANG_VERSION" 50
+
+clang_lib=("/usr/lib/llvm-$CLANG_VERSION/lib/clang/"*"/lib/linux")
+sudo sh -c "echo \"$clang_lib\" > /etc/ld.so.conf.d/clang.conf"
+sudo ldconfig
+
+sudo apt-get autoclean && sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Load ASAN
+export ASAN_OPTIONS=detect_leaks=0:symbolize=1
+export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-5.0/bin/llvm-symbolizer
+export LD_PRELOAD=/usr/lib/llvm-5.0/lib/clang/5.0.0/lib/linux/libclang_rt.asan-x86_64.so
+
+# Segfault?
+sccache
+
+# To unload ASAN, set LD_PRELOAD=
+```
+
 [![Build Status](https://travis-ci.org/mozilla/sccache.svg?branch=master)](https://travis-ci.org/mozilla/sccache) [![Build status](https://ci.appveyor.com/api/projects/status/h4yqo430634pmfmt?svg=true)](https://ci.appveyor.com/project/luser/sccache2)
 
 sccache - Shared Compilation Cache
