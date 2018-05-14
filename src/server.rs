@@ -1048,7 +1048,7 @@ where
                     res.stderr = stderr;
                 }
                 Err(Error(ErrorKind::ProcessError(output), _)) => {
-                    debug!("Compilation failed: {:?}", output);
+                    error!("Compilation failed: {:?}", output);
                     stats.compile_fails += 1;
                     match output.status.code() {
                         Some(code) => res.retcode = Some(code),
