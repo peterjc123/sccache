@@ -119,12 +119,19 @@ impl CCompilerImpl for NVCC {
     }
 }
 
-pub static ARGS: [(ArgInfo, gcc::GCCArgAttribute); 5] = [
+pub static ARGS: [(ArgInfo, gcc::GCCArgAttribute); 12] = [
     take_arg!("--compiler-bindir", Path, Separated, PassThrough),
+    take_arg!("--compiler-options", String, Separated, PassThrough),
     take_arg!("--std", String, Separated, PassThrough),
+    flag!("-O3", PassThrough),
     take_arg!("-Xcompiler", String, Separated, PassThrough),
+    take_arg!("-Xfatbin", String, Separated, PassThrough),
+    take_arg!("-Xptxas", String, Separated, PassThrough),
     take_arg!("-ccbin", Path, Separated, PassThrough),
-    take_arg!("-gencode", String, Separated, PassThrough),
+    take_arg!("-gencode", String, CanBeSeparated('='), PassThrough),
+    flag!("-lineinfo", PassThrough),
+    take_arg!("-maxrregcount", String, CanBeSeparated('='), PassThrough),
+    take_arg!("-std", String, CanBeSeparated('='), PassThrough),
 ];
 
 // TODO: add some unit tests
