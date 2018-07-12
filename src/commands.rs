@@ -696,6 +696,10 @@ pub fn run_command(cmd: Command) -> Result<i32> {
             );
             return res.chain_err(|| "failed to execute compile");
         }
+        Command::NoOp => {
+            trace!("Command::NoOp");
+            println!("sccache: no operation");
+        }
     }
 
     Ok(0)
