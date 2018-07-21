@@ -81,7 +81,6 @@ impl CCompilerImpl for HCC {
 
 
 static ARGS: [(ArgInfo, gcc::GCCArgAttribute); 3] = [
-    take_arg!("--amdgpu-target", String, PassThrough),
-    take_arg!("-hc", PassThrough),
-    take_arg!("-share", PassThrough)
+    take_arg!("--amdgpu-target=", String, PassThrough),
+    take_arg!("-hc", PassThrough)
 ];
