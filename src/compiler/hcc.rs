@@ -22,6 +22,7 @@ use ::compiler::{
 };
 use compiler::args::*;
 use compiler::c::{CCompilerImpl, CCompilerKind, Language, ParsedArguments};
+use compiler::gcc::GCCArgAttribute::*;
 use futures::future::{self, Future};
 use futures_cpupool::CpuPool;
 use mock_command::{
