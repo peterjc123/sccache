@@ -22,6 +22,7 @@ use crate::compiler::c::{CCompiler, CCompilerKind};
 use crate::compiler::clang::Clang;
 use crate::compiler::gcc::GCC;
 use crate::compiler::nvcc::NVCC;
+use crate::compiler::hcc::HCC;
 use crate::compiler::msvc::MSVC;
 use crate::compiler::rust::Rust;
 use crate::dist;
@@ -933,20 +934,22 @@ where
 {
     trace!("detect_c_compiler");
 
-    // The detection script doesn't work with NVCC, have to assume NVCC executable name
-    // ends with "nvcc" or "nvcc.exe" instead.
+    // The detection script doesn't work with clang-cl (it would say that it's msvc, which
+    // is not what we want), have to assume clang-cl executable name ends with "clang-cl"
+    // or "clang-cl.exe" instead.
     let executable_str = executable.clone().into_os_string().into_string().unwrap();
     debug!("executable: {}", executable_str);
-    if executable_str.ends_with("nvcc") || executable_str.ends_with("nvcc.exe") {
-        debug!("Found NVCC");
-        return Box::new(CCompiler::new(NVCC, executable, &pool)
+    if executable_str.ends_with("clang-cl") || executable_str.ends_with("clang-cl.exe") {
+        debug!("Found clang-cl");
+        return Box::new(CCompiler::new(ClangCl, executable, &pool)
                         .map(|c| Some(Box::new(c) as Box<Compiler<T>>)));
     }
 
-    // Otherwise, check if compiler is one of MSVC / Clang / GCC
-    let test = b"##if defined(_MSC_VER) && defined(__clang__)
+    // Otherwise, check if compiler is one of MSVC / Clang / GCC / NVCC
+    // On Windows, when NVCC is used, the MSC_VER flag will be set, so handle that below.
+    let test = b"#if defined(_MSC_VER) && defined(__clang__)
 msvc-clang
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && !defined(__NVCC__)
 msvc
 #elif defined(__clang__)
 clang
@@ -954,6 +957,10 @@ clang
 gcc
 #elif defined(__DCC__)
 diab
+#elif defined(__HCC__)
+hcc
+#elif defined(__NVCC__)
+nvcc
 #endif
 "
     .to_vec();
@@ -1029,6 +1036,20 @@ diab
                         )
                         .map(|c| Box::new(c) as Box<dyn Compiler<T>>)
                     }));
+                }
+                "nvcc" => {
+                    debug!("Found nvcc");
+                    return Box::new(
+                        CCompiler::new(NVCC, executable, &pool)
+                            .map(|c| Box::new(c) as Box<dyn Compiler<T>>),
+                    );
+                }
+                "hcc" => {
+                    debug!("Found hcc");
+                    return Box::new(
+                        CCompiler::new(HCC, executable, &pool)
+                            .map(|c| Box::new(c) as Box<dyn Compiler<T>>),
+                    );
                 }
                 _ => (),
             }
