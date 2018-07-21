@@ -62,7 +62,26 @@ impl CCompilerImpl for HCC {
                      env_vars: &[(OsString, OsString)])
                      -> SFuture<process::Output> where T: CommandCreatorSync
     {
-        clang::preprocess(creator, executable, parsed_args, cwd, env_vars)
+        trace!("preprocess");
+        let language = match parsed_args.language {
+            Language::C => "c",
+            Language::Cxx => "c++",
+            Language::ObjectiveC => "objective-c",
+            Language::ObjectiveCxx => "objective-c++",
+        };
+        let mut cmd = creator.clone().new_command_sync(executable);
+        cmd.arg("-E")
+            .arg(&parsed_args.input)
+            .args(&parsed_args.preprocessor_args)
+            .args(&parsed_args.common_args)
+            .env_clear()
+            .envs(env_vars.iter().map(|&(ref k, ref v)| (k, v)))
+            .current_dir(cwd);
+
+        if log_enabled!(Trace) {
+            trace!("preprocess: {:?}", cmd);
+        }
+        run_input_output(cmd, None)
     }
 
     fn compile<T>(&self,
@@ -74,14 +93,33 @@ impl CCompilerImpl for HCC {
                   -> SFuture<(Cacheable, process::Output)>
         where T: CommandCreatorSync
     {
-        clang::compile(creator, executable, parsed_args, cwd, env_vars)
+        trace!("compile");
+
+        let out_file = match parsed_args.outputs.get("obj") {
+            Some(obj) => obj,
+            None => {
+                return f_err("Missing object file output")
+            }
+        };
+
+        let mut attempt = creator.clone().new_command_sync(executable);
+        attempt.arg("-c")
+            .arg(&parsed_args.input)
+            .arg("-o").arg(&out_file)
+            .args(&parsed_args.preprocessor_args)
+            .args(&parsed_args.common_args)
+            .env_clear()
+            .envs(env_vars.iter().map(|&(ref k, ref v)| (k, v)))
+            .current_dir(&cwd);
+        Box::new(run_input_output(attempt, None).map(|output| {
+            (Cacheable::Yes, output)
+        }))
     }
 }
 
 
-
 static ARGS: [(ArgInfo, gcc::GCCArgAttribute); 3] = [
     take_arg!("--amdgpu-target", String, PassThrough),
-    take_arg!("--driver-mode=g++", PassThrough),
-    take_arg!("-hc", PassThrough)
+    flag!("--driver-mode=g++", PassThrough),
+    flag!("-hc", PassThrough)
 ];
