@@ -15,6 +15,7 @@
 #![allow(unused_imports,dead_code,unused_variables)]
 
 use ::compiler::{
+    gcc,
     clang,
     Cacheable,
     CompilerArguments,
@@ -23,6 +24,7 @@ use ::compiler::{
 use compiler::args::*;
 use compiler::c::{CCompilerImpl, CCompilerKind, Language, ParsedArguments};
 use compiler::gcc::GCCArgAttribute::*;
+use log::LogLevel::Trace;
 use futures::future::{self, Future};
 use futures_cpupool::CpuPool;
 use mock_command::{
@@ -52,7 +54,7 @@ impl CCompilerImpl for HCC {
                        arguments: &[OsString],
                        cwd: &Path) -> CompilerArguments<ParsedArguments>
     {
-        clang::parse_arguments(arguments, cwd, (&clang::ARGS[..], &ARGS[..]))
+        gcc::parse_arguments(arguments, cwd, (&gcc::ARGS[..], &ARGS[..]))
     }
 
     fn preprocess<T>(&self,
@@ -120,7 +122,7 @@ impl CCompilerImpl for HCC {
 
 
 static ARGS: [(ArgInfo, gcc::GCCArgAttribute); 3] = [
-    take_arg!("--amdgpu-target", String, PassThrough),
+    take_arg!("--amdgpu-target", String, CanBeSeparated('='), PassThrough),
     flag!("--driver-mode=g++", PassThrough),
     flag!("-hc", PassThrough)
 ];
