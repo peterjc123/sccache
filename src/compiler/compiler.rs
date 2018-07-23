@@ -935,14 +935,14 @@ where
     trace!("detect_c_compiler");
 
     // The detection script doesn't work with NVCC, have to assume NVCC executable name
-      // ends with "nvcc" or "nvcc.exe" instead.
-      let executable_str = executable.clone().into_os_string().into_string().unwrap();
-      debug!("executable: {}", executable_str);
-      if executable_str.ends_with("nvcc") || executable_str.ends_with("nvcc.exe") {
-          debug!("Found NVCC");
-          return Box::new(CCompiler::new(NVCC, executable, &pool)
-                          .map(|c| Some(Box::new(c) as Box<Compiler<T>>)));
-      }
+    // ends with "nvcc" or "nvcc.exe" instead.
+    let executable_str = executable.clone().into_os_string().into_string().unwrap();
+    debug!("executable: {}", executable_str);
+    if executable_str.ends_with("nvcc") || executable_str.ends_with("nvcc.exe") {
+      debug!("Found NVCC");
+      return Box::new(CCompiler::new(NVCC, executable, &pool)
+                      .map(|c| Some(Box::new(c) as Box<Compiler<T>>)));
+    }
 
     // The detection script doesn't work with clang-cl (it would say that it's msvc, which
     // is not what we want), have to assume clang-cl executable name ends with "clang-cl"
@@ -955,8 +955,7 @@ where
                         .map(|c| Some(Box::new(c) as Box<Compiler<T>>)));
     }
 
-    // Otherwise, check if compiler is one of MSVC / Clang / GCC / NVCC
-    // On Windows, when NVCC is used, the MSC_VER flag will be set, so handle that below.
+    // Otherwise, check if compiler is one of MSVC / Clang / GCC
     let test = b"#if defined(_MSC_VER) && defined(__clang__)
 msvc-clang
 #elif defined(_MSC_VER)
