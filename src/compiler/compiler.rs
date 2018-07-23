@@ -22,6 +22,7 @@ use crate::compiler::c::{CCompiler, CCompilerKind};
 use crate::compiler::clang::Clang;
 use crate::compiler::gcc::GCC;
 use crate::compiler::nvcc::NVCC;
+use crate::compiler::hcc::HCC;
 use crate::compiler::msvc::MSVC;
 use crate::compiler::rust::Rust;
 use crate::dist;
@@ -943,8 +944,19 @@ where
                         .map(|c| Some(Box::new(c) as Box<Compiler<T>>)));
     }
 
+    // The detection script doesn't work with clang-cl (it would say that it's msvc, which
+    // is not what we want), have to assume clang-cl executable name ends with "clang-cl"
+    // or "clang-cl.exe" instead.
+    let executable_str = executable.clone().into_os_string().into_string().unwrap();
+    debug!("executable: {}", executable_str);
+    if executable_str.ends_with("clang-cl") || executable_str.ends_with("clang-cl.exe") {
+        debug!("Found clang-cl");
+        return Box::new(CCompiler::new(ClangCl, executable, &pool)
+                        .map(|c| Some(Box::new(c) as Box<Compiler<T>>)));
+    }
+
     // Otherwise, check if compiler is one of MSVC / Clang / GCC
-    let test = b"##if defined(_MSC_VER) && defined(__clang__)
+    let test = b"#if defined(_MSC_VER) && defined(__clang__)
 msvc-clang
 #elif defined(_MSC_VER)
 msvc
@@ -954,6 +966,8 @@ clang
 gcc
 #elif defined(__DCC__)
 diab
+#elif defined(__HCC__)
+hcc
 #endif
 "
     .to_vec();
@@ -1029,6 +1043,13 @@ diab
                         )
                         .map(|c| Box::new(c) as Box<dyn Compiler<T>>)
                     }));
+                }
+                "hcc" => {
+                    debug!("Found hcc");
+                    return Box::new(
+                        CCompiler::new(HCC, executable, &pool)
+                            .map(|c| Box::new(c) as Box<dyn Compiler<T>>),
+                    );
                 }
                 _ => (),
             }

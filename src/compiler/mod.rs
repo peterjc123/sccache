@@ -21,6 +21,7 @@ mod compiler;
 mod diab;
 mod gcc;
 mod nvcc;
+mod hcc;
 mod msvc;
 mod rust;
 
