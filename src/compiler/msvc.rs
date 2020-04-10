@@ -391,7 +391,7 @@ pub fn preprocess<T>(creator: &T,
     where T: CommandCreatorSync
 {
     let mut cmd = creator.clone().new_command_sync(executable);
-    cmd.arg("-E")
+    cmd.arg("-EP")
         .arg(&parsed_args.input)
         .arg("-nologo")
         .args(&parsed_args.common_args)

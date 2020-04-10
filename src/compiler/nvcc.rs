@@ -72,13 +72,25 @@ impl CCompilerImpl for NVCC {
             Language::ObjectiveCxx => "objective-c++",
         };
         let mut cmd = creator.clone().new_command_sync(executable);
-        cmd.arg("-E")
-            .arg(&parsed_args.input)
-            .args(&parsed_args.preprocessor_args)
-            .args(&parsed_args.common_args)
-            .env_clear()
-            .envs(env_vars.iter().map(|&(ref k, ref v)| (k, v)))
-            .current_dir(cwd);
+        if cfg!(windows) {
+            cmd.arg("-E")
+                .arg("-Xcompiler")
+                .arg("-EP")
+                .arg(&parsed_args.input)
+                .args(&parsed_args.preprocessor_args)
+                .args(&parsed_args.common_args)
+                .env_clear()
+                .envs(env_vars.iter().map(|&(ref k, ref v)| (k, v)))
+                .current_dir(cwd);
+        } else {
+            cmd.arg("-E")
+                .arg(&parsed_args.input)
+                .args(&parsed_args.preprocessor_args)
+                .args(&parsed_args.common_args)
+                .env_clear()
+                .envs(env_vars.iter().map(|&(ref k, ref v)| (k, v)))
+                .current_dir(cwd);
+        }
 
         if log_enabled!(Trace) {
             trace!("preprocess: {:?}", cmd);
