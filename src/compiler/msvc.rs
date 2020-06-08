@@ -259,7 +259,7 @@ msvc_args!(static ARGS: [ArgInfo<ArgData>; _] = [
     msvc_flag!("FC", TooHardFlag), // Use absolute paths in error messages.
     msvc_take_arg!("FI", PathBuf, CanBeSeparated, PreprocessorArgumentPath),
     msvc_take_arg!("FR", PathBuf, Concatenated, TooHardPath),
-    msvc_flag!("FS", TooHardFlag),
+    msvc_flag!("FS", PassThrough),
     msvc_take_arg!("FU", PathBuf, CanBeSeparated, TooHardPath),
     msvc_take_arg!("Fa", PathBuf, Concatenated, TooHardPath),
     msvc_take_arg!("Fd", PathBuf, Concatenated, ProgramDatabase),
@@ -304,7 +304,7 @@ msvc_args!(static ARGS: [ArgInfo<ArgData>; _] = [
     msvc_flag!("LDd", PassThrough),
     msvc_flag!("MD", PassThrough),
     msvc_flag!("MDd", PassThrough),
-    msvc_flag!("MP", TooHardFlag), // Multiple source files.
+    msvc_flag!("MP", PassThrough), // Multiple source files.
     msvc_flag!("MT", PassThrough),
     msvc_flag!("MTd", PassThrough),
     msvc_flag!("O1", PassThrough),
